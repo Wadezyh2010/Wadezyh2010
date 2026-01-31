@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>教学智慧屏系统</title>
+    <style>
+        :root {
+            --primary-color: #1976D2;
+            --secondary-color: #E3F2FD;
+            --accent-color: #0D47A1;
+            --text-color: #333;
+            --light-color: #fff;
+            --base-font-size: 16px;
+        }
+        
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+            font-size: var(--base-font-size);
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        .container {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            height: 100vh;
+            min-width: 1000px;
+        }
+        
+        .sidebar {
+            background-color: var(--primary-color);
+            color: var(--light-color);
+            padding: 20px;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            overflow-y: auto;
+        }
+        
+        .sidebar h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 1px solid var(--light-color);
+            padding-bottom: 10px;
+            font-size: calc(var(--base-font-size) * 1.5);
+        }
+        
+        .menu-item {
+            padding: 14px 15px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: calc(var(--base-font-size) * 1.1);
+        }
+        
+        .menu-item:hover {
+            background-color: var(--accent-color);
+        }
+        
+        .menu-item.active {
+            background-color: var(--accent-color);
+            font-weight: bold;
+        }
+        
+        .main-content {
+            padding: 20px;
+            overflow-y: auto;
+            height: calc(100vh - 40px);
+        }
+        
+        .tool-section {
+            display: none;
+            background-color: var(--light-color);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            min-height: calc(100vh - 200px);
+        }
+        
+        .tool-section.active {
+            display: block;
+        }
+        
+        .whiteboard-container {
+            position: relative;
+            width: 100%;
+            height: calc(100vh - 300px);
+            min-height: 500px;
+            border: 1px solid #ddd;
+            background-color: white;
+        }
+        
+        .whiteboard {
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            font-size: calc(var(--base-font-size) * 1.05);
+        }
+        
+        input, select, button {
+            padding: 10px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 100%;
+            box-sizing: border-box;
+            font-size: var(--base-font-size);
+        }
+        
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-size: calc(var(--base-font-size) * 1.05);
+        }
+        
+        button:hover {
+            background-color: var(--accent-color);
+        }
+        
+        .timer-display {
+            font-size: 3rem;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .timer-controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .student-list {
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .student-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            font-size: var(--base-font-size);
+        }
+        
+        .drawing-tools {
+            display: flex;
+            gap: 15px;
+            margin: 15px 0;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-radius: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .tool-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .color-picker {
+            width: 50px;
+            height: 40px;
+            padding: 0;
+            border: 2px solid #ccc;
+            cursor: pointer;
+        }
+        
+        .pen-size-btn {
+            width: 80px;
+            height: 38px;
+            background-color: white;
+            color: var(--text-color);
+            border: 1px solid #ccc;
+            font-size: var(--base-font-size);
+        }
+        
+        .pen-size-btn.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .eraser-btn {
+            background-color: #f44336;
+        }
+        
+        .eraser-btn.active {
+            background-color: #d32f2f;
+        }
+        
+        .fullscreen-btn {
+            background-color: #4CAF50;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+            width: auto;
+            padding: 10px 20px;
+        }
+        
+        .fullscreen-btn:hover {
+            background-color: #388E3C;
+        }
+        
+        .web-shortcuts {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .web-shortcut {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        
+        .web-shortcut a {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: calc(var(--base-font-size) * 1.1);
+            transition: background-color 0.3s;
+            margin-bottom: 8px;
+            width: 100%;
+        }
+        
+        .web-shortcut a:hover {
+            background-color: #388E3C;
+        }
+        
+        .web-shortcut span {
+            font-size: calc(var(--base-font-size) * 0.9);
+            color: #666;
+        }
+        
+        .shape-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .page-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .page-info {
+            font-weight: bold;
+            min-width: 80px;
+            text-align: center;
+        }
+        
+        /* 全屏模式样式 */
+        .fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: white;
+            z-index: 999;
+            overflow: hidden;
+        }
+        
+        .fullscreen .whiteboard-container {
+            height: calc(100vh - 100px);
+        }
+        
+        .fullscreen .drawing-tools {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            margin: 0;
+            border-radius: 0;
+            z-index: 1000;
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 1200px) {
+            .container {
+                min-width: 800px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            :root {
+                --base-font-size: 14px;
+            }
+            
+            .container {
+                grid-template-columns: 200px 1fr;
+                min-width: 600px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            :root {
+                --base-font-size: 12px;
+            }
+            
+            .container {
+                grid-template-columns: 150px 1fr;
+                min-width: 400px;
+            }
+            
+            .drawing-tools {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <h2>教学智慧屏</h2>
+            <div class="menu-item active" data-section="whiteboard">智能白板</div>
+            <div class="menu-item" data-section="random-student">随机学号生成器</div>
+            <div class="menu-item" data-section="timer">课堂计时器</div>
+            <div class="menu-item" data-section="web-shortcut">网页快捷入口</div>
+        </div>
+        
+        <div class="main-content">
+            <!-- 智能白板 -->
+            <div class="tool-section active" id="whiteboard">
+                <h2>智能白板 <span class="page-info">第<span id="current-page">1</span>页</span></h2>
+                <div class="whiteboard-container">
+                    <canvas class="whiteboard" id="drawing-board"></canvas>
+                </div>
+                <div class="drawing-tools">
+                    <div class="tool-group">
+                        <label for="pen-color">颜色:</label>
+                        <input type="color" id="pen-color" value="#000000" class="color-picker">
+                    </div>
+                    
+                    <div class="tool-group">
+                        <label>粗细:</label>
+                        <button class="pen-size-btn" data-size="3">细</button>
+                        <button class="pen-size-btn active" data-size="5">中</button>
+                        <button class="pen-size-btn" data-size="8">粗</button>
+                    </div>
+                    
+                    <div class="tool-group">
+                        <button id="eraser-btn" class="eraser-btn">橡皮擦</button>
+                        <label>橡皮大小:</label>
+                        <input type="range" id="eraser-size" min="5" max="50" value="15" class="eraser-size-slider">
+                        <span id="eraser-size-value">15px</span>
+                    </div>
+                    
+                    <div class="tool-group">
+                        <button id="clear-board">清空白板</button>
+                        <button id="toggle-fullscreen">进入全屏</button>
+                    </div>
+                    
+                    <div class="shape-buttons">
+                        <button id="draw-line">直线</button>
+                        <button id="draw-rect">矩形</button>
+                        <button id="draw-circle">圆形</button>
+                        <button id="draw-triangle">三角形</button>
+                    </div>
+                    
+                    <div class="page-controls">
+                        <button id="prev-page">上一页</button>
+                        <button id="next-page">下一页</button>
+                        <button id="add-page">新增页</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 随机学号生成器 -->
+            <div class="tool-section" id="random-student">
+                <h2>随机学号生成器</h2>
+                <div class="form-group">
+                    <label for="student-count">学生人数</label>
+                    <input type="number" id="student-count" min="1" value="30">
+                </div>
+                <div class="form-group">
+                    <label for="generate-count">抽取数量</label>
+                    <input type="number" id="generate-count" min="1" value="1">
+                </div>
+                <button id="generate-students">生成随机学号</button>
+                <div class="student-list" id="student-result"></div>
+            </div>
+            
+            <!-- 课堂计时器 -->
+            <div class="tool-section" id="timer">
+                <h2>课堂计时器</h2>
+                <div class="form-group">
+                    <label for="timer-minutes">分钟</label>
+                    <input type="number" id="timer-minutes" min="0" value="10">
+                </div>
+                <div class="form-group">
+                    <label for="timer-seconds">秒钟</label>
+                    <input type="number" id="timer-seconds" min="0" max="59" value="0">
+                </div>
+                <div class="timer-display" id="time-display">10:00</div>
+                <div class="timer-controls">
+                    <button id="start-timer">开始</button>
+                    <button id="pause-timer">暂停</button>
+                    <button id="reset-timer">重置</button>
+                </div>
+            </div>
+            
+            <!-- 网页快捷入口 -->
+            <div class="tool-section" id="web-shortcut">
+                <h2>网页快捷入口</h2>
+                <div class="web-shortcuts">
+                    <div class="web-shortcut">
+                        <a href="https://filehelper.weixin.qq.com/" target="_blank">微信文件传输助手</a>
+                        <span>微信网页版文件传输工具</span>
+                    </div>
+                    <div class="web-shortcut">
+                        <a href="https://web.pp.ltd/#/login?redirect=/task/list" target="_blank">判判</a>
+                        <span>作业批改与任务管理平台</span>
+                    </div>
+                    <div class="web-shortcut">
+                        <a href="https://www.zhixue.com/login.html" target="_blank">智学网</a>
+                        <span>在线学习与考试平台</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 菜单切换
+        document.querySelectorAll('.menu-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelector('.menu-item.active').classList.remove('active');
+                this.classList.add('active');
+                
+                const sectionId = this.getAttribute('data-section');
+                document.querySelector('.tool-section.active').classList.remove('active');
+                document.getElementById(sectionId).classList.add('active');
+            });
+        });
+        
+        // 白板功能
+        const canvas = document.getElementById('drawing-board');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+        let currentColor = '#000000';
+        let currentWidth = 5;
+        let isErasing = false;
+        let eraserSize = 15;
+        let currentPage = 1;
+        let pages = [];
+        let isDrawingShape = false;
+        let currentShape = null;
+        let shapeStartX = 0;
+        let shapeStartY = 0;
+        
+        // 初始化第一页
+        initPage();
+        
+        function initPage() {
+            resizeCanvas();
+            pages[currentPage - 1] = { data: null };
+            redrawCurrentPage();
+        }
+        
+        // 保存当前页绘图状态
+        function saveDrawingState() {
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            pages[currentPage - 1] = {
+                data: imageData
+            };
+        }
+        
+        // 重绘当前页
+        function redrawCurrentPage() {
+            if (pages[currentPage - 1] && pages[currentPage - 1].data) {
+                ctx.putImageData(pages[currentPage - 1].data, 0, 0);
+            } else {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+        }
+        
+        // 翻页功能
+        document.getElementById('prev-page').addEventListener('click', () => {
+            if (currentPage > 1) {
+                saveDrawingState();
+                currentPage--;
+                document.getElementById('current-page').textContent = currentPage;
+                redrawCurrentPage();
+            }
+        });
+        
+        document.getElementById('next-page').addEventListener('click', () => {
+            saveDrawingState();
+            currentPage++;
+            document.getElementById('current-page').textContent = currentPage;
+            if (!pages[currentPage - 1]) {
+                pages[currentPage - 1] = { data: null };
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            } else {
+                redrawCurrentPage();
+            }
+        });
+        
+        document.getElementById('add-page').addEventListener('click', () => {
+            saveDrawingState();
+            currentPage = pages.length + 1;
+            document.getElementById('current-page').textContent = currentPage;
+            pages[currentPage - 1] = { data: null };
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        });
+        
+        // 橡皮擦大小调整
+        const eraserSizeSlider = document.getElementById('eraser-size');
+        const eraserSizeValue = document.getElementById('eraser-size-value');
+        
+        eraserSizeSlider.addEventListener('input', function() {
+            eraserSize = parseInt(this.value);
+            eraserSizeValue.textContent = eraserSize + 'px';
+        });
+        
+        // 笔/橡皮切换
+        const toggleToolBtn = document.getElementById('eraser-btn');
+        toggleToolBtn.addEventListener('click', function() {
+            isErasing = !isErasing;
+            this.textContent = isErasing ? '切换画笔' : '切换橡皮';
+            if (isErasing) {
+                this.style.backgroundColor = '#d32f2f';
+            } else {
+                this.style.backgroundColor = '#f44336';
+            }
+        });
+        
+        // 基本图形绘制
+        document.getElementById('draw-line').addEventListener('click', () => {
+            currentShape = 'line';
+        });
+        
+        document.getElementById('draw-rect').addEventListener('click', () => {
+            currentShape = 'rect';
+        });
+        
+        document.getElementById('draw-circle').addEventListener('click', () => {
+            currentShape = 'circle';
+        });
+        
+        document.getElementById('draw-triangle').addEventListener('click', () => {
+            currentShape = 'triangle';
+        });
+        
+        // 设置画布大小
+        function resizeCanvas() {
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+        }
+        
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        
+        // 获取鼠标/触摸位置
+        function getPosition(e) {
+            let x, y;
+            if (e.type.includes('touch')) {
+                const touch = e.touches[0] || e.changedTouches[0];
+                const rect = canvas.getBoundingClientRect();
+                x = touch.clientX - rect.left;
+                y = touch.clientY - rect.top;
+            } else {
+                const rect = canvas.getBoundingClientRect();
+                x = e.clientX - rect.left;
+                y = e.clientY - rect.top;
+            }
+            return { x, y };
+        }
+        
+        // 开始绘制
+        function startDrawing(e) {
+            const pos = getPosition(e);
+            [lastX, lastY] = [pos.x, pos.y];
+            
+            if (currentShape) {
+                isDrawingShape = true;
+                shapeStartX = pos.x;
+                shapeStartY = pos.y;
+                return;
+            }
+            
+            isDrawing = true;
+            
+            if (isErasing) {
+                ctx.clearRect(pos.x - eraserSize/2, pos.y - eraserSize/2, eraserSize, eraserSize);
+            }
+        }
+        
+        // 绘制过程
+        function draw(e) {
+            const pos = getPosition(e);
+            const x = pos.x;
+            const y = pos.y;
+            
+            if (isDrawingShape) {
+                // 预览图形
+                redrawCurrentPage();
+                ctx.beginPath();
+                ctx.strokeStyle = currentColor;
+                ctx.lineWidth = currentWidth;
+                
+                switch (currentShape) {
+                    case 'line':
+                        ctx.moveTo(shapeStartX, shapeStartY);
+                        ctx.lineTo(x, y);
+                        break;
+                    case 'rect':
+                        ctx.rect(shapeStartX, shapeStartY, x - shapeStartX, y - shapeStartY);
+                        break;
+                    case 'circle':
+                        const radius = Math.sqrt(Math.pow(x - shapeStartX, 2) + Math.pow(y - shapeStartY, 2));
+                        ctx.arc(shapeStartX, shapeStartY, radius, 0, Math.PI * 2);
+                        break;
+                    case 'triangle':
+                        ctx.moveTo(shapeStartX, shapeStartY);
+                        ctx.lineTo(x, y);
+                        ctx.lineTo(shapeStartX * 2 - x, y);
+                        ctx.closePath();
+                        break;
+                }
+                
+                ctx.stroke();
+                return;
+            }
+            
+            if (!isDrawing) return;
+            
+            if (isErasing) {
+                ctx.clearRect(x - eraserSize/2, y - eraserSize/2, eraserSize, eraserSize);
+            } else {
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
+                ctx.lineTo(x, y);
+                ctx.strokeStyle = currentColor;
+                ctx.lineWidth = currentWidth;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.stroke();
+            }
+            
+            [lastX, lastY] = [x, y];
+        }
+        
+        // 停止绘制
+        function stopDrawing() {
+            if (isDrawingShape) {
+                saveDrawingState();
+            }
+            isDrawing = false;
+            isDrawingShape = false;
+            ctx.beginPath();
+        }
+        
+        // 事件监听
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+        
+        // 触摸支持
+        canvas.addEventListener('touchstart', startDrawing);
+        canvas.addEventListener('touchmove', draw);
+        canvas.addEventListener('touchend', stopDrawing);
+        
+        // 颜色选择
+        document.getElementById('pen-color').addEventListener('change', function() {
+            currentColor = this.value;
+        });
+        
+        // 画笔粗细选择
+        document.querySelectorAll('.pen-size-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.pen-size-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentWidth = parseInt(this.getAttribute('data-size'));
+            });
+        });
+        
+        // 清空白板
+        document.getElementById('clear-board').addEventListener('click', () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            saveDrawingState();
+        });
+        
+        // 全屏功能
+        const fullscreenBtn = document.getElementById('toggle-fullscreen');
+        const whiteboardSection = document.getElementById('whiteboard');
+        
+        fullscreenBtn.addEventListener('click', toggleFullscreen);
+        
+        function toggleFullscreen() {
+            if (whiteboardSection.classList.contains('fullscreen')) {
+                exitFullscreen();
+            } else {
+                enterFullscreen();
+            }
+        }
+        
+        function enterFullscreen() {
+            whiteboardSection.classList.add('fullscreen');
+            fullscreenBtn.textContent = '退出全屏';
+            document.body.style.overflow = 'hidden';
+            resizeCanvas();
+        }
+        
+        function exitFullscreen() {
+            whiteboardSection.classList.remove('fullscreen');
+            fullscreenBtn.textContent = '进入全屏';
+            document.body.style.overflow = '';
+            resizeCanvas();
+        }
+        
+        // 随机学号生成器
+        document.getElementById('generate-students').addEventListener('click', () => {
+            const studentCount = parseInt(document.getElementById('student-count').value);
+            const generateCount = parseInt(document.getElementById('generate-count').value);
+            
+            if (generateCount > studentCount) {
+                alert('抽取数量不能大于学生总数');
+                return;
+            }
+            
+            const students = Array.from({length: studentCount}, (_, i) => i + 1);
+            const result = [];
+            
+            for (let i = 0; i < generateCount; i++) {
+                const randomIndex = Math.floor(Math.random() * students.length);
+                result.push(students[randomIndex]);
+                students.splice(randomIndex, 1);
+            }
+            
+            const resultElement = document.getElementById('student-result');
+            resultElement.innerHTML = '';
+            
+            result.forEach(num => {
+                const div = document.createElement('div');
+                div.className = 'student-item';
+                div.textContent = `学号: ${num}`;
+                resultElement.appendChild(div);
+            });
+        });
+        
+        // 计时器功能
+        let timerInterval;
+        let totalSeconds = 600; // 默认10分钟
+        
+        document.getElementById('start-timer').addEventListener('click', startTimer);
+        document.getElementById('pause-timer').addEventListener('click', pauseTimer);
+        document.getElementById('reset-timer').addEventListener('click', resetTimer);
+        
+        document.getElementById('timer-minutes').addEventListener('change', updateTimerDisplay);
+        document.getElementById('timer-seconds').addEventListener('change', updateTimerDisplay);
+        
+        function startTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            
+            const minutes = parseInt(document.getElementById('timer-minutes').value) || 0;
+            const seconds = parseInt(document.getElementById('timer-seconds').value) || 0;
+            totalSeconds = minutes * 60 + seconds;
+            
+            updateTimerDisplay();
+            
+            timerInterval = setInterval(() => {
+                if (totalSeconds <= 0) {
+                    clearInterval(timerInterval);
+                    alert('时间到！');
+                    return;
+                }
+                
+                totalSeconds--;
+                updateTimerDisplay();
+            }, 1000);
+        }
+        
+        function pauseTimer() {
+            clearInterval(timerInterval);
+        }
+        
+        function resetTimer() {
+            clearInterval(timerInterval);
+            const minutes = parseInt(document.getElementById('timer-minutes').value) || 0;
+            const seconds = parseInt(document.getElementById('timer-seconds').value) || 0;
+            totalSeconds = minutes * 60 + seconds;
+            updateTimerDisplay();
+        }
+        
+        function updateTimerDisplay() {
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            document.getElementById('time-display').textContent = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+        
+        // 响应式字体调整
+        function adjustFontSize() {
+            const screenWidth = window.innerWidth;
+            let baseSize = 16; // 默认基准字体大小
+            
+            if (screenWidth <= 768) {
+                baseSize = 14;
+            }
+            if (screenWidth <= 480) {
+                baseSize = 12;
+            }
+            
+            document.documentElement.style.setProperty('--base-font-size', `${baseSize}px`);
+        }
+        
+        window.addEventListener('resize', adjustFontSize);
+        adjustFontSize(); // 初始化时调用
+    </script>
+</body>
+</html>
+//上外尚阳张赟豪九五14
